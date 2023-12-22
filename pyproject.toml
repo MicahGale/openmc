@@ -92,3 +92,9 @@ include= ["openmc*"]
 ]
 "openmc.data.effective_dose" = ["*.txt"]
 
+[tool.pytest.ini_options]
+python_files = "test*.py"
+python_classes = "NoThanks"
+filterwarnings = "ignore::UserWarning"
+addopts = "-rs"
+
