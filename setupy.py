@@ -8,13 +8,6 @@ from setuptools import setup, find_packages
 from Cython.Build import cythonize
 
 
-# Determine shared library suffix
-if sys.platform == 'darwin':
-    suffix = 'dylib'
-else:
-    suffix = 'so'
-
-
 kwargs = {
     'scripts': glob.glob('scripts/openmc-*'),
 

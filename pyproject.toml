@@ -14,7 +14,7 @@ maintainers = [
 ]
 
 
-python_requires = ">=3.8"
+requires-python = ">=3.8"
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -80,14 +80,15 @@ version = {attr = "openmc.__version__"}
 
 
 [tool.setuptools.packages.find]
+exclude=["tests*"]
 # being explicit to avoid breaking
 include= ["openmc*"]
-exclude=["tests*"]
 
 [tool.setuptools.package-data]
-openmc.lib = ["libopenmc.*"]
-openmc.data = [
-    "mass_1.mas20.txt", "BREMX.DAT", "half_life.json", "*.h5"
+"openmc.lib" = ["libopenmc.{so,dylib}"]
+"openmc.data" = [
+    "mass_1.mas20.txt", 
+    "BREMX.DAT", "half_life.json", "*.h5"
 ]
-openmc.data.effective_dose = ["*.txt"]
+"openmc.data.effective_dose" = ["*.txt"]
 
