@@ -1,2 +1,93 @@
+[project]
+name = "openmc"
+dynamic = ["version"]
+description = "OpenMC"
+license = {file = "LICENSE"}
+readme = "README.md"
+
+authors = [
+    {name = "The OpenMC Development Team", email = "openmc@anl.gov"}
+]
+maintainers = [
+    {name = "Paul Romano"},
+    {name = "Patrick Shriwise"},
+]
+
+
+python_requires = ">=3.8"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "h5py", 
+    "ipython",
+    "lxml",
+    "matplotlib",
+    "numpy>=1.9", 
+    "pandas",
+    "scipy",
+    "uncertainties"
+]
+
+[project.optional-dependencies]
+depletion-mpi = ["mpi4py"]
+docs = [
+    "sphinx", 
+    "sphinxcontrib-katex", 
+    "sphinx-numfig", 
+    "jupyter",
+    "sphinxcontrib-svg2pdfconverter", 
+    "sphinx-rtd-theme"
+]
+test = ["pytest", "pytest-cov", "colorama"]
+vtk = ["vtk"]
+
+
+[project.urls]
+homepage = "https://openmc.org"
+Documentation = "https://docs.openmc.org"
+"Source Code" = "https://github.com/openmc-dev/openmc"
+Issues = "https://github.com/openmc-dev/openmc/issues"
+Repository = "https://github.com/openmc-dev/openmc.git"
+Downloads = "https://github.com/openmc-dev/openmc/releases"
+
+[project.scripts]
+
 [build-system]
-requires = ["setuptools", "wheel", "numpy", "cython"]
+requires = ["setuptools>=61.0.0", "wheel", "numpy", "cython"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.dynamic]
+version = {attr = "openmc.__version__"}
+
+
+[tool.setuptools.packages.find]
+# being explicit to avoid breaking
+include= ["openmc*"]
+exclude=["tests*"]
+
+[tool.setuptools.package-data]
+openmc.lib = ["libopenmc.*"]
+openmc.data = [
+    "mass_1.mas20.txt", "BREMX.DAT", "half_life.json", "*.h5"
+]
+openmc.data.effective_dose = ["*.txt"]
+
