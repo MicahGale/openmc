@@ -19,10 +19,10 @@ def test_source():
     assert src.energy == energy
 
     elem = src.to_xml_element()
-    assert 'strength' in elem.attrib
-    assert elem.find('space') is not None
-    assert elem.find('angle') is not None
-    assert elem.find('energy') is not None
+    assert "strength" in elem.attrib
+    assert elem.find("space") is not None
+    assert elem.find("angle") is not None
+    assert elem.find("energy") is not None
 
     src = openmc.IndependentSource.from_xml_element(elem)
     assert isinstance(src.angle, openmc.stats.Isotropic)
@@ -35,50 +35,47 @@ def test_source():
 def test_spherical_uniform():
     r_outer = 2.0
     r_inner = 1.0
-    thetas = (0.0, pi/2)
+    thetas = (0.0, pi / 2)
     phis = (0.0, pi)
     origin = (0.0, 1.0, 2.0)
 
-    sph_indep_function = openmc.stats.spherical_uniform(r_outer,
-                                                        r_inner,
-                                                        thetas,
-                                                        phis,
-                                                        origin)
+    sph_indep_function = openmc.stats.spherical_uniform(
+        r_outer, r_inner, thetas, phis, origin
+    )
 
     assert isinstance(sph_indep_function, openmc.stats.SphericalIndependent)
 
 
 def test_source_file():
-    filename = 'source.h5'
+    filename = "source.h5"
     src = openmc.FileSource(path=filename)
     assert src.path == filename
 
     elem = src.to_xml_element()
-    assert 'strength' in elem.attrib
-    assert 'file' in elem.attrib
+    assert "strength" in elem.attrib
+    assert "file" in elem.attrib
 
 
 def test_source_dlopen():
-    library = './libsource.so'
+    library = "./libsource.so"
     src = openmc.CompiledSource(library=library)
     assert src.library == library
 
     elem = src.to_xml_element()
-    assert 'library' in elem.attrib
+    assert "library" in elem.attrib
 
 
 def test_source_xml_roundtrip():
     # Create a source and write to an XML element
-    space = openmc.stats.Box([-5., -5., -5.], [5., 5., 5.])
+    space = openmc.stats.Box([-5.0, -5.0, -5.0], [5.0, 5.0, 5.0])
     energy = openmc.stats.Discrete([1.0e6, 2.0e6, 5.0e6], [0.3, 0.5, 0.2])
     angle = openmc.stats.PolarAzimuthal(
-        mu=openmc.stats.Uniform(0., 1.),
-        phi=openmc.stats.Uniform(0., 2*pi),
-        reference_uvw=(0., 1., 0.)
+        mu=openmc.stats.Uniform(0.0, 1.0),
+        phi=openmc.stats.Uniform(0.0, 2 * pi),
+        reference_uvw=(0.0, 1.0, 0.0),
     )
     src = openmc.IndependentSource(
-        space=space, angle=angle, energy=energy,
-        particle='photon', strength=100.0
+        space=space, angle=angle, energy=energy, particle="photon", strength=100.0
     )
     elem = src.to_xml_element()
 
@@ -103,11 +100,11 @@ def test_source_xml_roundtrip():
 def test_rejection(run_in_tmpdir):
     # Model with two spheres inside a box
     mat = openmc.Material()
-    mat.add_nuclide('H1', 1.0)
+    mat.add_nuclide("H1", 1.0)
     sph1 = openmc.Sphere(x0=3, r=1.0)
     sph2 = openmc.Sphere(x0=-3, r=1.0)
     cube = openmc.model.RectangularParallelepiped(
-        -5., 5., -5., 5., -5., 5., boundary_type='reflective'
+        -5.0, 5.0, -5.0, 5.0, -5.0, 5.0, boundary_type="reflective"
     )
     cell1 = openmc.Cell(fill=mat, region=-sph1)
     cell2 = openmc.Cell(fill=mat, region=-sph2)
@@ -117,11 +114,13 @@ def test_rejection(run_in_tmpdir):
     model.geometry = openmc.Geometry([cell1, cell2, cell3])
     model.settings.particles = 100
     model.settings.batches = 10
-    model.settings.run_mode = 'fixed source'
+    model.settings.run_mode = "fixed source"
 
     # Set up a box source with rejection on the spherical cell
     space = openmc.stats.Box(*cell3.bounding_box)
-    model.settings.source = openmc.IndependentSource(space=space, domains=[cell1, cell2])
+    model.settings.source = openmc.IndependentSource(
+        space=space, domains=[cell1, cell2]
+    )
 
     # Load up model via openmc.lib and sample source
     model.export_to_xml()
@@ -139,21 +138,21 @@ def test_rejection(run_in_tmpdir):
 
 def test_exceptions():
 
-    with pytest.raises(AttributeError, match=r'Please use the FileSource class'):
+    with pytest.raises(AttributeError, match=r"Please use the FileSource class"):
         s = openmc.IndependentSource()
-        s.file = 'my_file'
+        s.file = "my_file"
 
-    with pytest.raises(AttributeError, match=r'Please use the CompiledSource class'):
+    with pytest.raises(AttributeError, match=r"Please use the CompiledSource class"):
         s = openmc.IndependentSource()
-        s.library = 'my_library'
+        s.library = "my_library"
 
-    with pytest.raises(AttributeError, match=r'Please use the CompiledSource class'):
+    with pytest.raises(AttributeError, match=r"Please use the CompiledSource class"):
         s = openmc.IndependentSource()
-        s.parameters = 'my_params'
+        s.parameters = "my_params"
 
-    with pytest.warns(FutureWarning, match=r'in favor of \'IndependentSource\''):
+    with pytest.warns(FutureWarning, match=r"in favor of \'IndependentSource\'"):
         s = openmc.Source()
 
-    with pytest.raises(AttributeError, match=r'has no attribute \'frisbee\''):
+    with pytest.raises(AttributeError, match=r"has no attribute \'frisbee\'"):
         s = openmc.IndependentSource()
         s.frisbee

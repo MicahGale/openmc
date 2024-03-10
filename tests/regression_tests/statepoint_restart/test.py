@@ -7,6 +7,7 @@ from tests.testing_harness import TestHarness
 from tests.regression_tests import config
 from tests import cdtemp
 
+
 class StatepointRestartTestHarness(TestHarness):
     def __init__(self, final_sp, restart_sp):
         super().__init__(final_sp)
@@ -47,22 +48,22 @@ class StatepointRestartTestHarness(TestHarness):
         statepoint = statepoint[0]
 
         # Run OpenMC
-        if config['mpi']:
-            mpi_args = [config['mpiexec'], '-n', config['mpi_np']]
-            openmc.run(restart_file=statepoint, openmc_exec=config['exe'],
-                       mpi_args=mpi_args)
+        if config["mpi"]:
+            mpi_args = [config["mpiexec"], "-n", config["mpi_np"]]
+            openmc.run(
+                restart_file=statepoint, openmc_exec=config["exe"], mpi_args=mpi_args
+            )
         else:
-            openmc.run(openmc_exec=config['exe'], restart_file=statepoint)
+            openmc.run(openmc_exec=config["exe"], restart_file=statepoint)
 
 
 def test_statepoint_restart():
-    harness = StatepointRestartTestHarness('statepoint.10.h5',
-                                           'statepoint.07.h5')
+    harness = StatepointRestartTestHarness("statepoint.10.h5", "statepoint.07.h5")
     harness.main()
 
 
 def test_batch_check(request):
-    xmls = list(request.path.parent.glob('*.xml'))
+    xmls = list(request.path.parent.glob("*.xml"))
 
     with cdtemp(xmls):
         model = openmc.Model.from_xml()
@@ -72,7 +73,7 @@ def test_batch_check(request):
 
         # run a restart with the resulting statepoint
         # and the settings unchanged
-        with pytest.raises(RuntimeError, match='is smaller than the number of batches'):
+        with pytest.raises(RuntimeError, match="is smaller than the number of batches"):
             model.run(restart_file=sp_file)
 
         # update the number of batches and run again
