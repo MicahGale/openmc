@@ -26,8 +26,12 @@ _dll.calc_zn_rad.restype = None
 _dll.calc_zn_rad.argtypes = [c_int, c_double, ndpointer(c_double)]
 
 _dll.rotate_angle_c.restype = None
-_dll.rotate_angle_c.argtypes = [ndpointer(c_double), c_double,
-                                POINTER(c_double), POINTER(c_uint64)]
+_dll.rotate_angle_c.argtypes = [
+    ndpointer(c_double),
+    c_double,
+    POINTER(c_double),
+    POINTER(c_uint64),
+]
 _dll.maxwell_spectrum.restype = c_double
 _dll.maxwell_spectrum.argtypes = [c_double, POINTER(c_uint64)]
 
@@ -35,14 +39,14 @@ _dll.watt_spectrum.restype = c_double
 _dll.watt_spectrum.argtypes = [c_double, c_double, POINTER(c_uint64)]
 
 _dll.broaden_wmp_polynomials.restype = None
-_dll.broaden_wmp_polynomials.argtypes = [c_double, c_double, c_int,
-                                         ndpointer(c_double)]
+_dll.broaden_wmp_polynomials.argtypes = [c_double, c_double, c_int, ndpointer(c_double)]
 
 _dll.normal_variate.restype = c_double
 _dll.normal_variate.argtypes = [c_double, c_double, POINTER(c_uint64)]
 
+
 def t_percentile(p, df):
-    """ Calculate the percentile of the Student's t distribution with a
+    """Calculate the percentile of the Student's t distribution with a
     specified probability level and number of degrees of freedom
 
     Parameters
@@ -63,7 +67,7 @@ def t_percentile(p, df):
 
 
 def calc_pn(n, x):
-    """ Calculate the n-th order Legendre polynomial at the value of x.
+    """Calculate the n-th order Legendre polynomial at the value of x.
 
     Parameters
     ----------
@@ -85,7 +89,7 @@ def calc_pn(n, x):
 
 
 def evaluate_legendre(data, x):
-    """ Finds the value of f(x) given a set of Legendre coefficients
+    """Finds the value of f(x) given a set of Legendre coefficients
     and the value of x.
 
     Parameters
@@ -103,12 +107,13 @@ def evaluate_legendre(data, x):
     """
 
     data_arr = np.array(data, dtype=np.float64)
-    return _dll.evaluate_legendre(len(data)-1,
-                                  data_arr.ctypes.data_as(POINTER(c_double)), x)
+    return _dll.evaluate_legendre(
+        len(data) - 1, data_arr.ctypes.data_as(POINTER(c_double)), x
+    )
 
 
 def calc_rn(n, uvw):
-    """ Calculate the n-th order real Spherical Harmonics for a given angle;
+    """Calculate the n-th order real Spherical Harmonics for a given angle;
     all Rn,m values are provided for all n (where -n <= m <= n).
 
     Parameters
@@ -133,7 +138,7 @@ def calc_rn(n, uvw):
 
 
 def calc_zn(n, rho, phi):
-    """ Calculate the n-th order modified Zernike polynomial moment for a
+    """Calculate the n-th order modified Zernike polynomial moment for a
     given angle (rho, theta) location in the unit disk. The normalization of
     the polynomials is such that the integral of Z_pq*Z_pq over the unit disk
     is exactly pi
@@ -161,7 +166,7 @@ def calc_zn(n, rho, phi):
 
 
 def calc_zn_rad(n, rho):
-    """ Calculate the even orders in n-th order modified Zernike polynomial
+    """Calculate the even orders in n-th order modified Zernike polynomial
     moment with no azimuthal dependency (m=0) for a given radial location in
     the unit disk. The normalization of the polynomials is such that the
     integral of Z_pq*Z_pq over the unit disk is exactly pi.
@@ -187,7 +192,7 @@ def calc_zn_rad(n, rho):
 
 
 def rotate_angle(uvw0, mu, phi, prn_seed=None):
-    """ Rotates direction cosines through a polar angle whose cosine is
+    """Rotates direction cosines through a polar angle whose cosine is
     mu and through an azimuthal angle sampled uniformly.
 
     Parameters
@@ -224,7 +229,7 @@ def rotate_angle(uvw0, mu, phi, prn_seed=None):
 
 
 def maxwell_spectrum(T, prn_seed=None):
-    """ Samples an energy from the Maxwell fission distribution based
+    """Samples an energy from the Maxwell fission distribution based
     on a direct sampling scheme.
 
     Parameters
@@ -249,7 +254,7 @@ def maxwell_spectrum(T, prn_seed=None):
 
 
 def watt_spectrum(a, b, prn_seed=None):
-    """ Samples an energy from the Watt energy-dependent fission spectrum.
+    """Samples an energy from the Watt energy-dependent fission spectrum.
 
     Parameters
     ----------
@@ -275,7 +280,7 @@ def watt_spectrum(a, b, prn_seed=None):
 
 
 def normal_variate(mean_value, std_dev, prn_seed=None):
-    """ Samples an energy from the Normal distribution.
+    """Samples an energy from the Normal distribution.
 
     Parameters
     ----------
@@ -301,7 +306,7 @@ def normal_variate(mean_value, std_dev, prn_seed=None):
 
 
 def broaden_wmp_polynomials(E, dopp, n):
-    """ Doppler broadens the windowed multipole curvefit.  The curvefit is a
+    """Doppler broadens the windowed multipole curvefit.  The curvefit is a
     polynomial of the form a/E + b/sqrt(E) + c + d sqrt(E) ...
 
     Parameters

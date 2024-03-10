@@ -2,6 +2,7 @@
 
 An ndarray to store reaction rates with string, integer, or slice indexing.
 """
+
 from typing import Dict
 
 import numpy as np
@@ -81,9 +82,9 @@ class ReactionRates(np.ndarray):
     def __array_finalize__(self, obj):
         if obj is None:
             return
-        self.index_mat = getattr(obj, 'index_mat', None)
-        self.index_nuc = getattr(obj, 'index_nuc', None)
-        self.index_rx = getattr(obj, 'index_rx', None)
+        self.index_mat = getattr(obj, "index_mat", None)
+        self.index_nuc = getattr(obj, "index_nuc", None)
+        self.index_rx = getattr(obj, "index_rx", None)
 
     # Reaction rates are distributed to other processes via multiprocessing,
     # which entails pickling the objects. In order to preserve the custom

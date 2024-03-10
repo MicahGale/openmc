@@ -36,10 +36,10 @@ class Trigger(EqualityMixin):
         self._scores = []
 
     def __repr__(self):
-        string = 'Trigger\n'
-        string += '{: <16}=\t{}\n'.format('\tType', self._trigger_type)
-        string += '{: <16}=\t{}\n'.format('\tThreshold', self._threshold)
-        string += '{: <16}=\t{}\n'.format('\tScores', self._scores)
+        string = "Trigger\n"
+        string += "{: <16}=\t{}\n".format("\tType", self._trigger_type)
+        string += "{: <16}=\t{}\n".format("\tThreshold", self._threshold)
+        string += "{: <16}=\t{}\n".format("\tScores", self._scores)
         return string
 
     @property
@@ -48,8 +48,9 @@ class Trigger(EqualityMixin):
 
     @trigger_type.setter
     def trigger_type(self, trigger_type):
-        cv.check_value('tally trigger type', trigger_type,
-                       ['variance', 'std_dev', 'rel_err'])
+        cv.check_value(
+            "tally trigger type", trigger_type, ["variance", "std_dev", "rel_err"]
+        )
         self._trigger_type = trigger_type
 
     @property
@@ -58,7 +59,7 @@ class Trigger(EqualityMixin):
 
     @threshold.setter
     def threshold(self, threshold):
-        cv.check_type('tally trigger threshold', threshold, Real)
+        cv.check_type("tally trigger threshold", threshold, Real)
         self._threshold = threshold
 
     @property
@@ -67,7 +68,7 @@ class Trigger(EqualityMixin):
 
     @scores.setter
     def scores(self, scores):
-        cv.check_type('trigger scores', scores, Iterable, str)
+        cv.check_type("trigger scores", scores, Iterable, str)
 
         # Set scores making sure not to have duplicates
         self._scores = []
@@ -89,7 +90,7 @@ class Trigger(EqualityMixin):
         element.set("type", self._trigger_type)
         element.set("threshold", str(self._threshold))
         if len(self._scores) != 0:
-            element.set("scores", ' '.join(self._scores))
+            element.set("scores", " ".join(self._scores))
         return element
 
     @classmethod
