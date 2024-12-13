@@ -41,9 +41,9 @@ def test_expand_enrichment():
 
 def test_expand_no_isotopes():
     """Test that correct warning is raised for elements with no isotopes"""
-    with warns(UserWarning, match='No naturally occurring'):
-        element = openmc.Element('Tc')
-        element.expand(100.0, 'ao')
+    with warns(UserWarning, match="No naturally occurring"):
+        element = openmc.Element("Tc")
+        element.expand(100.0, "ao")
 
 
 def test_expand_exceptions():

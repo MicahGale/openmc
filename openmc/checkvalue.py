@@ -210,12 +210,16 @@ def check_increasing(name: str, value, equality: bool = False):
     """
     if equality:
         if not np.all(np.diff(value) >= 0.0):
-            raise ValueError(f'Unable to set "{name}" to "{value}" since its '
-                             'elements must be increasing.')
+            raise ValueError(
+                f'Unable to set "{name}" to "{value}" since its '
+                "elements must be increasing."
+            )
     elif not equality:
         if not np.all(np.diff(value) > 0.0):
-            raise ValueError(f'Unable to set "{name}" to "{value}" since its '
-                             'elements must be strictly increasing.')
+            raise ValueError(
+                f'Unable to set "{name}" to "{value}" since its '
+                "elements must be strictly increasing."
+            )
 
 
 def check_value(name, value, accepted_values):

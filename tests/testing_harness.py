@@ -399,6 +399,7 @@ class TolerantPyAPITestHarness(PyAPITestHarness):
     due to single precision usage (e.g., as in the random ray solver).
 
     """
+
     def _are_files_equal(self, actual_path, expected_path, tolerance):
         def isfloat(value):
             try:
@@ -438,16 +439,17 @@ class TolerantPyAPITestHarness(PyAPITestHarness):
 
     def _compare_results(self):
         """Make sure the current results agree with the reference."""
-        compare = self._are_files_equal('results_test.dat', 'results_true.dat', 1e-6)
+        compare = self._are_files_equal("results_test.dat", "results_true.dat", 1e-6)
         if not compare:
-            expected = open('results_true.dat').readlines()
-            actual = open('results_test.dat').readlines()
-            diff = unified_diff(expected, actual, 'results_true.dat',
-                                'results_test.dat')
-            print('Result differences:')
-            print(''.join(colorize(diff)))
-            os.rename('results_test.dat', 'results_error.dat')
-        assert compare, 'Results do not agree'
+            expected = open("results_true.dat").readlines()
+            actual = open("results_test.dat").readlines()
+            diff = unified_diff(
+                expected, actual, "results_true.dat", "results_test.dat"
+            )
+            print("Result differences:")
+            print("".join(colorize(diff)))
+            os.rename("results_test.dat", "results_error.dat")
+        assert compare, "Results do not agree"
 
 
 class PlotTestHarness(TestHarness):

@@ -1029,7 +1029,6 @@ def gnds_name(Z, A, m=0):
     return f"{ATOMIC_SYMBOL[Z]}{A}"
 
 
-
 def _get_element_symbol(element: str) -> str:
     if len(element) > 2:
         symbol = ELEMENT_SYMBOL.get(element.lower())

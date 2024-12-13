@@ -402,24 +402,24 @@ def test_get_nuclide_atom_densities_specific(uo2):
 
 def test_get_element_atom_densities(uo2):
     for element, density in uo2.get_element_atom_densities().items():
-        assert element in ('U', 'O')
+        assert element in ("U", "O")
         assert density > 0
 
 
 def test_get_element_atom_densities_specific(uo2):
-    one_nuc = uo2.get_element_atom_densities('O')
-    assert list(one_nuc.keys()) == ['O']
+    one_nuc = uo2.get_element_atom_densities("O")
+    assert list(one_nuc.keys()) == ["O"]
     assert list(one_nuc.values())[0] > 0
 
-    one_nuc = uo2.get_element_atom_densities('uranium')
-    assert list(one_nuc.keys()) == ['U']
+    one_nuc = uo2.get_element_atom_densities("uranium")
+    assert list(one_nuc.keys()) == ["U"]
     assert list(one_nuc.values())[0] > 0
 
-    with pytest.raises(ValueError, match='not found'):
-        uo2.get_element_atom_densities('Li')
+    with pytest.raises(ValueError, match="not found"):
+        uo2.get_element_atom_densities("Li")
 
-    with pytest.raises(ValueError, match='not recognized'):
-        uo2.get_element_atom_densities('proximium')
+    with pytest.raises(ValueError, match="not recognized"):
+        uo2.get_element_atom_densities("proximium")
 
 
 def test_get_nuclide_atoms():
@@ -739,11 +739,11 @@ def test_avoid_subnormal(run_in_tmpdir):
     # Write a materials.xml with a material that has a nuclide density that is
     # represented as a subnormal floating point value
     mat = openmc.Material()
-    mat.add_nuclide('H1', 1.0)
-    mat.add_nuclide('H2', 1.0e-315)
+    mat.add_nuclide("H1", 1.0)
+    mat.add_nuclide("H2", 1.0e-315)
     mats = openmc.Materials([mat])
     mats.export_to_xml()
 
     # When read back in, the density should be zero
     mats = openmc.Materials.from_xml()
-    assert mats[0].get_nuclide_atom_densities()['H2'] == 0.0
+    assert mats[0].get_nuclide_atom_densities()["H2"] == 0.0

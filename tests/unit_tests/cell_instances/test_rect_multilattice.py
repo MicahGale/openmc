@@ -7,7 +7,7 @@ import openmc.lib
 from tests import cdtemp
 
 
-@pytest.fixture(scope='module', autouse=True)
+@pytest.fixture(scope="module", autouse=True)
 def double_rect_lattice_model():
     openmc.reset_auto_ids()
     model = openmc.Model()
@@ -43,7 +43,7 @@ def double_rect_lattice_model():
     tally = openmc.Tally(tally_id=1)
     dcell_filter = openmc.DistribcellFilter(c)
     tally.filters = [dcell_filter]
-    tally.scores = ['flux']
+    tally.scores = ["flux"]
     model.tallies = [tally]
 
     # Add box source that covers the model space well
@@ -65,6 +65,7 @@ def double_rect_lattice_model():
         yield
         openmc.lib.finalize()
 
+
 # This shows the expected cell instance numbers for each lattice position:
 #      ┌─┬─┬─┬─┐
 #      │2│3│6│7│
@@ -83,7 +84,9 @@ rect_expected_results = [
 ]
 
 
-@pytest.mark.parametrize("r,expected_cell_instance", rect_expected_results, ids=lambda p : f'{p}')
+@pytest.mark.parametrize(
+    "r,expected_cell_instance", rect_expected_results, ids=lambda p: f"{p}"
+)
 def test_cell_instance_rect_multilattice(r, expected_cell_instance):
     _, cell_instance = openmc.lib.find_cell(r)
     assert cell_instance == expected_cell_instance

@@ -408,7 +408,7 @@ def test_unset_universes():
         hex_lattice.create_xml_subelement(elem)
 
 
-@pytest.mark.parametrize("orientation", ['x', 'y'])
+@pytest.mark.parametrize("orientation", ["x", "y"])
 def test_hex_lattice_roundtrip(orientation):
     openmc.reset_auto_ids()
 

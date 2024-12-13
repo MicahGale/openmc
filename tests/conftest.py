@@ -30,7 +30,7 @@ def run_in_tmpdir(tmpdir):
         orig.chdir()
 
 
-@pytest.fixture(scope='session', autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def resolve_paths():
-    with openmc.config.patch('resolve_paths', False):
+    with openmc.config.patch("resolve_paths", False):
         yield
