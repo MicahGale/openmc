@@ -1,4 +1,5 @@
-from ctypes import c_bool, c_int, c_size_t, c_int32, c_double, Structure, POINTER
+from ctypes import (c_bool, c_int, c_size_t, c_int32,
+                    c_double, Structure, POINTER)
 
 from . import _dll
 from .error import _error_handler
@@ -18,8 +19,9 @@ class _Position(Structure):
     z : c_double
         Position's z value (default: 0.0)
     """
-
-    _fields_ = [("x", c_double), ("y", c_double), ("z", c_double)]
+    _fields_ = [('x', c_double),
+                ('y', c_double),
+                ('z', c_double)]
 
     def __getitem__(self, idx):
         if idx == 0:
@@ -29,7 +31,7 @@ class _Position(Structure):
         elif idx == 2:
             return self.z
         else:
-            raise IndexError("{} index is invalid for _Position".format(idx))
+            raise IndexError(f"{idx} index is invalid for _Position")
 
     def __setitem__(self, idx, val):
         if idx == 0:
@@ -39,10 +41,10 @@ class _Position(Structure):
         elif idx == 2:
             self.z = val
         else:
-            raise IndexError("{} index is invalid for _Position".format(idx))
+            raise IndexError(f"{idx} index is invalid for _Position")
 
     def __repr__(self):
-        return "({}, {}, {})".format(self.x, self.y, self.z)
+        return f"({self.x}, {self.y}, {self.z})"
 
 
 class _PlotBase(Structure):
@@ -79,15 +81,12 @@ class _PlotBase(Structure):
     level : int
         The universe level for the plot (default: -1 -> all universes shown)
     """
-
-    _fields_ = [
-        ("origin_", _Position),
-        ("width_", _Position),
-        ("basis_", c_int),
-        ("pixels_", 3 * c_size_t),
-        ("color_overlaps_", c_bool),
-        ("level_", c_int),
-    ]
+    _fields_ = [('origin_', _Position),
+                ('width_', _Position),
+                ('basis_', c_int),
+                ('pixels_', 3*c_size_t),
+                ('color_overlaps_', c_bool),
+                ('level_', c_int)]
 
     def __init__(self):
         self.level_ = -1
@@ -122,40 +121,38 @@ class _PlotBase(Structure):
     @property
     def basis(self):
         if self.basis_ == 1:
-            return "xy"
+            return 'xy'
         elif self.basis_ == 2:
-            return "xz"
+            return 'xz'
         elif self.basis_ == 3:
-            return "yz"
+            return 'yz'
 
-        raise ValueError("Plot basis {} is invalid".format(self.basis_))
+        raise ValueError(f"Plot basis {self.basis_} is invalid")
 
     @basis.setter
     def basis(self, basis):
         if isinstance(basis, str):
-            valid_bases = ("xy", "xz", "yz")
+            valid_bases = ('xy', 'xz', 'yz')
             basis = basis.lower()
             if basis not in valid_bases:
-                raise ValueError("{} is not a valid plot basis.".format(basis))
+                raise ValueError(f"{basis} is not a valid plot basis.")
 
-            if basis == "xy":
+            if basis == 'xy':
                 self.basis_ = 1
-            elif basis == "xz":
+            elif basis == 'xz':
                 self.basis_ = 2
-            elif basis == "yz":
+            elif basis == 'yz':
                 self.basis_ = 3
             return
 
         if isinstance(basis, int):
             valid_bases = (1, 2, 3)
             if basis not in valid_bases:
-                raise ValueError("{} is not a valid plot basis.".format(basis))
+                raise ValueError(f"{basis} is not a valid plot basis.")
             self.basis_ = basis
             return
 
-        raise ValueError(
-            "{} of type {} is an" " invalid plot basis".format(basis, type(basis))
-        )
+        raise ValueError(f"{basis} of type {type(basis)} is an invalid plot basis")
 
     @property
     def h_res(self):
@@ -198,20 +195,18 @@ class _PlotBase(Structure):
         self.color_overlaps_ = val
 
     def __repr__(self):
-        out_str = [
-            "-----",
-            "Plot:",
-            "-----",
-            "Origin: {}".format(self.origin),
-            "Width: {}".format(self.width),
-            "Height: {}".format(self.height),
-            "Basis: {}".format(self.basis),
-            "HRes: {}".format(self.h_res),
-            "VRes: {}".format(self.v_res),
-            "Color Overlaps: {}".format(self.color_overlaps),
-            "Level: {}".format(self.level),
-        ]
-        return "\n".join(out_str)
+        out_str = ["-----",
+                   "Plot:",
+                   "-----",
+                   f"Origin: {self.origin}",
+                   f"Width: {self.width}",
+                   f"Height: {self.height}",
+                   f"Basis: {self.basis}",
+                   f"HRes: {self.h_res}",
+                   f"VRes: {self.v_res}",
+                   f"Color Overlaps: {self.color_overlaps}",
+                   f"Level: {self.level}"]
+        return '\n'.join(out_str)
 
 
 _dll.openmc_id_map.argtypes = [POINTER(_PlotBase), POINTER(c_int32)]
@@ -237,7 +232,8 @@ def id_map(plot):
         contains, in order, cell IDs, cell instances, and material IDs.
 
     """
-    img_data = np.zeros((plot.v_res, plot.h_res, 3), dtype=np.dtype("int32"))
+    img_data = np.zeros((plot.v_res, plot.h_res, 3),
+                        dtype=np.dtype('int32'))
     _dll.openmc_id_map(plot, img_data.ctypes.data_as(POINTER(c_int32)))
     return img_data
 

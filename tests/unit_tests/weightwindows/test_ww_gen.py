@@ -55,8 +55,13 @@ def model():
         run_mode="fixed source",
         particles=100,
         batches=10,
+<<<<<<< HEAD
         max_splits=10,
         survival_biasing=False,
+=======
+        max_history_splits=10,
+        survival_biasing=False
+>>>>>>> develop
     )
 
     # 10 keV neutron point source at the origin
@@ -101,7 +106,7 @@ def labels(params):
 
 
 @pytest.mark.parametrize("filters", test_cases, ids=labels)
-def test_ww_gen(filters, model):
+def test_ww_gen(filters, run_in_tmpdir, model):
 
     tally = openmc.Tally()
     tally.filters = list(filters)

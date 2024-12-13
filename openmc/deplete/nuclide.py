@@ -16,15 +16,11 @@ from openmc.checkvalue import check_type
 from openmc.stats import Univariate
 
 __all__ = [
-    "DecayTuple",
-    "ReactionTuple",
-    "Nuclide",
-    "FissionYield",
-    "FissionYieldDistribution",
-]
+    "DecayTuple", "ReactionTuple", "Nuclide", "FissionYield",
+    "FissionYieldDistribution"]
 
 
-DecayTuple = namedtuple("DecayTuple", "type target branching_ratio")
+DecayTuple = namedtuple('DecayTuple', 'type target branching_ratio')
 DecayTuple.__doc__ = """\
 Decay mode information
 
@@ -49,7 +45,7 @@ except AttributeError:
     pass
 
 
-ReactionTuple = namedtuple("ReactionTuple", "type target Q branching_ratio")
+ReactionTuple = namedtuple('ReactionTuple', 'type target Q branching_ratio')
 ReactionTuple.__doc__ = """\
 Transmutation reaction information
 
@@ -181,7 +177,9 @@ class Nuclide:
             Branching ratio of the decay mode
 
         """
-        self.decay_modes.append(DecayTuple(type, target, branching_ratio))
+        self.decay_modes.append(
+            DecayTuple(type, target, branching_ratio)
+        )
 
     def add_reaction(self, type, target, Q, branching_ratio):
         """Add transmutation reaction to the nuclide
@@ -201,7 +199,9 @@ class Nuclide:
             Branching ratio of the reaction
 
         """
-        self.reactions.append(ReactionTuple(type, target, Q, branching_ratio))
+        self.reactions.append(
+            ReactionTuple(type, target, Q, branching_ratio)
+        )
 
     @classmethod
     def from_xml(cls, element, root=None, fission_q=None):
@@ -225,38 +225,38 @@ class Nuclide:
 
         """
         nuc = cls()
-        nuc.name = element.get("name")
+        nuc.name = element.get('name')
 
         # Check for half-life
-        if "half_life" in element.attrib:
-            nuc.half_life = float(element.get("half_life"))
-            nuc.decay_energy = float(element.get("decay_energy", "0"))
+        if 'half_life' in element.attrib:
+            nuc.half_life = float(element.get('half_life'))
+            nuc.decay_energy = float(element.get('decay_energy', '0'))
 
         # Check for decay paths
-        for decay_elem in element.iter("decay"):
-            d_type = decay_elem.get("type")
-            target = decay_elem.get("target")
+        for decay_elem in element.iter('decay'):
+            d_type = decay_elem.get('type')
+            target = decay_elem.get('target')
             if target is not None and target.lower() == "nothing":
                 target = None
-            branching_ratio = float(decay_elem.get("branching_ratio"))
+            branching_ratio = float(decay_elem.get('branching_ratio'))
             nuc.decay_modes.append(DecayTuple(d_type, target, branching_ratio))
 
         # Check for sources
-        for src_elem in element.iter("source"):
-            particle = src_elem.get("particle")
+        for src_elem in element.iter('source'):
+            particle = src_elem.get('particle')
             distribution = Univariate.from_xml_element(src_elem)
             nuc.sources[particle] = distribution
 
         # Check for reaction paths
-        for reaction_elem in element.iter("reaction"):
-            r_type = reaction_elem.get("type")
-            Q = float(reaction_elem.get("Q", "0"))
-            branching_ratio = float(reaction_elem.get("branching_ratio", "1"))
+        for reaction_elem in element.iter('reaction'):
+            r_type = reaction_elem.get('type')
+            Q = float(reaction_elem.get('Q', '0'))
+            branching_ratio = float(reaction_elem.get('branching_ratio', '1'))
 
             # If the type is not fission, get target and Q value, otherwise
             # just set null values
-            if r_type != "fission":
-                target = reaction_elem.get("target")
+            if r_type != 'fission':
+                target = reaction_elem.get('target')
                 if target is not None and target.lower() == "nothing":
                     target = None
             else:
@@ -265,24 +265,24 @@ class Nuclide:
                     Q = fission_q
 
             # Append reaction
-            nuc.reactions.append(ReactionTuple(r_type, target, Q, branching_ratio))
+            nuc.reactions.append(ReactionTuple(
+                r_type, target, Q, branching_ratio))
 
-        fpy_elem = element.find("neutron_fission_yields")
+        fpy_elem = element.find('neutron_fission_yields')
         if fpy_elem is not None:
             # Check for use of FPY from other nuclide
-            parent = fpy_elem.get("parent")
+            parent = fpy_elem.get('parent')
             if parent is not None:
                 assert root is not None
                 fpy_elem = root.find(
-                    './/nuclide[@name="{}"]/neutron_fission_yields'.format(parent)
+                    f'.//nuclide[@name="{parent}"]/neutron_fission_yields'
                 )
                 if fpy_elem is None:
                     raise ValueError(
                         "Fission product yields for {0} borrow from {1}, but {1} is"
                         " not present in the chain file or has no yields.".format(
                             nuc.name, parent
-                        )
-                    )
+                        ))
                 nuc._fpy = parent
 
             nuc.yield_data = FissionYieldDistribution.from_xml_element(fpy_elem)
@@ -298,46 +298,46 @@ class Nuclide:
             XML element to write nuclide data to
 
         """
-        elem = ET.Element("nuclide")
-        elem.set("name", self.name)
+        elem = ET.Element('nuclide')
+        elem.set('name', self.name)
 
         if self.half_life is not None:
-            elem.set("half_life", str(self.half_life))
-            elem.set("decay_modes", str(len(self.decay_modes)))
-            elem.set("decay_energy", str(self.decay_energy))
+            elem.set('half_life', str(self.half_life))
+            elem.set('decay_modes', str(len(self.decay_modes)))
+            elem.set('decay_energy', str(self.decay_energy))
             for mode_type, daughter, br in self.decay_modes:
-                mode_elem = ET.SubElement(elem, "decay")
-                mode_elem.set("type", mode_type)
+                mode_elem = ET.SubElement(elem, 'decay')
+                mode_elem.set('type', mode_type)
                 if daughter:
-                    mode_elem.set("target", daughter)
-                mode_elem.set("branching_ratio", str(br))
+                    mode_elem.set('target', daughter)
+                mode_elem.set('branching_ratio', str(br))
 
         # Write decay sources
         if self.sources:
             for particle, source in self.sources.items():
-                src_elem = source.to_xml_element("source")
-                src_elem.set("particle", particle)
+                src_elem = source.to_xml_element('source')
+                src_elem.set('particle', particle)
                 elem.append(src_elem)
 
-        elem.set("reactions", str(len(self.reactions)))
+        elem.set('reactions', str(len(self.reactions)))
         for rx, daughter, Q, br in self.reactions:
-            rx_elem = ET.SubElement(elem, "reaction")
-            rx_elem.set("type", rx)
-            rx_elem.set("Q", str(Q))
+            rx_elem = ET.SubElement(elem, 'reaction')
+            rx_elem.set('type', rx)
+            rx_elem.set('Q', str(Q))
             if daughter is not None:
-                rx_elem.set("target", daughter)
+                rx_elem.set('target', daughter)
             if br != 1.0:
-                rx_elem.set("branching_ratio", str(br))
+                rx_elem.set('branching_ratio', str(br))
 
         if self.yield_data:
-            fpy_elem = ET.SubElement(elem, "neutron_fission_yields")
+            fpy_elem = ET.SubElement(elem, 'neutron_fission_yields')
 
-            if hasattr(self, "_fpy"):
+            if hasattr(self, '_fpy'):
                 # Check for link to other nuclide data
-                fpy_elem.set("parent", self._fpy)
+                fpy_elem.set('parent', self._fpy)
             else:
-                energy_elem = ET.SubElement(fpy_elem, "energies")
-                energy_elem.text = " ".join(str(E) for E in self.yield_energies)
+                energy_elem = ET.SubElement(fpy_elem, 'energies')
+                energy_elem.text = ' '.join(str(E) for E in self.yield_energies)
                 self.yield_data.to_xml_element(fpy_elem)
 
         return elem
@@ -383,10 +383,8 @@ class Nuclide:
         openmc.deplete.Chain.validate
         """
 
-        msg_func = (
-            "Nuclide {name} has {prop} that sum to {actual} "
-            "instead of {expected} +/- {tol:7.4e}"
-        ).format
+        msg_func = ("Nuclide {name} has {prop} that sum to {actual} "
+                    "instead of {expected} +/- {tol:7.4e}").format
         valid = True
 
         # check decay modes
@@ -395,12 +393,8 @@ class Nuclide:
             stat = 1.0 - tolerance <= sum_br <= 1.0 + tolerance
             if not stat:
                 msg = msg_func(
-                    name=self.name,
-                    actual=sum_br,
-                    expected=1.0,
-                    tol=tolerance,
-                    prop="decay mode branch ratios",
-                )
+                    name=self.name, actual=sum_br, expected=1.0, tol=tolerance,
+                    prop="decay mode branch ratios")
                 if strict:
                     raise ValueError(msg)
                 elif quiet:
@@ -418,12 +412,8 @@ class Nuclide:
                 if stat:
                     continue
                 msg = msg_func(
-                    name=self.name,
-                    actual=sum_br,
-                    expected=1.0,
-                    tol=tolerance,
-                    prop="{} reaction branch ratios".format(rxn_type),
-                )
+                    name=self.name, actual=sum_br, expected=1.0, tol=tolerance,
+                    prop=f"{rxn_type} reaction branch ratios")
                 if strict:
                     raise ValueError(msg)
                 elif quiet:
@@ -438,12 +428,9 @@ class Nuclide:
                 if stat:
                     continue
                 msg = msg_func(
-                    name=self.name,
-                    actual=sum_yield,
-                    expected=2.0,
-                    tol=tolerance,
-                    prop="fission yields (E = {:7.4e} eV)".format(energy),
-                )
+                    name=self.name, actual=sum_yield,
+                    expected=2.0, tol=tolerance,
+                    prop=f"fission yields (E = {energy:7.4e} eV)")
                 if strict:
                     raise ValueError(msg)
                 elif quiet:
@@ -517,16 +504,15 @@ class FissionYieldDistribution(Mapping):
         if energy not in self.energies:
             raise KeyError(energy)
         return FissionYield(
-            self.products, self.yield_matrix[self.energies.index(energy)]
-        )
+            self.products, self.yield_matrix[self.energies.index(energy)])
 
     def __iter__(self):
         return iter(self.energies)
 
     def __repr__(self):
         return "<{} with {} products at {} energies>".format(
-            self.__class__.__name__, self.yield_matrix.shape[1], len(self.energies)
-        )
+            self.__class__.__name__, self.yield_matrix.shape[1],
+            len(self.energies))
 
     @classmethod
     def from_xml_element(cls, element):
@@ -709,9 +695,7 @@ class FissionYield(Mapping):
         return self * scalar
 
     def __repr__(self):
-        return "<{} containing {} products and yields>".format(
-            self.__class__.__name__, len(self)
-        )
+        return f"<{self.__class__.__name__} containing {len(self)} products and yields>"
 
     def __deepcopy__(self, memo):
         result = FissionYield(self.products, self.yields.copy())

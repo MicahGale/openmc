@@ -1,8 +1,7 @@
 import numbers
 import bisect
 import math
-import typing  # required to prevent typing.Union namespace overwriting Union
-from typing import Iterable, Optional, Tuple, List
+from collections.abc import Iterable
 from warnings import warn
 
 import h5py
@@ -59,12 +58,11 @@ class Results(list):
         Path to depletion result file
 
     """
-
-    def __init__(self, filename="depletion_results.h5"):
+    def __init__(self, filename='depletion_results.h5'):
         data = []
         if filename is not None:
             with h5py.File(str(filename), "r") as fh:
-                cv.check_filetype_version(fh, "depletion results", VERSION_RESULTS[0])
+                cv.check_filetype_version(fh, 'depletion results', VERSION_RESULTS[0])
 
                 # Get number of results stored
                 n = fh["number"][...].shape[0]
@@ -72,6 +70,7 @@ class Results(list):
                 for i in range(n):
                     data.append(StepResult.from_hdf5(fh, i))
         super().__init__(data)
+
 
     @classmethod
     def from_hdf5(cls, filename: PathLike):
@@ -91,17 +90,17 @@ class Results(list):
         warn(
             "The ResultsList.from_hdf5(...) method is no longer necessary and will "
             "be removed in a future version of OpenMC. Use Results(...) instead.",
-            FutureWarning,
+            FutureWarning
         )
         return cls(filename)
 
     def get_activity(
         self,
-        mat: typing.Union[Material, str],
+        mat: Material | str,
         units: str = "Bq/cm3",
         by_nuclide: bool = False,
-        volume: Optional[float] = None,
-    ) -> Tuple[np.ndarray, typing.Union[np.ndarray, List[dict]]]:
+        volume: float | None = None
+    ) -> tuple[np.ndarray, np.ndarray | list[dict]]:
         """Get activity of material over time.
 
         .. versionadded:: 0.14.0
@@ -135,7 +134,7 @@ class Results(list):
         elif isinstance(mat, str):
             mat_id = mat
         else:
-            raise TypeError("mat should be of type openmc.Material or str")
+            raise TypeError('mat should be of type openmc.Material or str')
 
         times = np.empty_like(self, dtype=float)
         if by_nuclide:
@@ -146,19 +145,17 @@ class Results(list):
         # Evaluate activity for each depletion time
         for i, result in enumerate(self):
             times[i] = result.time[0]
-            activities[i] = result.get_material(mat_id).get_activity(
-                units, by_nuclide, volume
-            )
+            activities[i] = result.get_material(mat_id).get_activity(units, by_nuclide, volume)
 
         return times, activities
 
     def get_atoms(
         self,
-        mat: typing.Union[Material, str],
+        mat: Material | str,
         nuc: str,
         nuc_units: str = "atoms",
-        time_units: str = "s",
-    ) -> Tuple[np.ndarray, np.ndarray]:
+        time_units: str = "s"
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Get number of nuclides over time from a single material
 
         Parameters
@@ -187,14 +184,15 @@ class Results(list):
 
         """
         cv.check_value("time_units", time_units, {"s", "d", "min", "h", "a"})
-        cv.check_value("nuc_units", nuc_units, {"atoms", "atom/b-cm", "atom/cm3"})
+        cv.check_value("nuc_units", nuc_units,
+                    {"atoms", "atom/b-cm", "atom/cm3"})
 
         if isinstance(mat, Material):
             mat_id = str(mat.id)
         elif isinstance(mat, str):
             mat_id = mat
         else:
-            raise TypeError("mat should be of type openmc.Material or str")
+            raise TypeError('mat should be of type openmc.Material or str')
         times = np.empty_like(self, dtype=float)
         concentrations = np.empty_like(self, dtype=float)
 
@@ -215,12 +213,12 @@ class Results(list):
         return times, concentrations
 
     def get_decay_heat(
-        self,
-        mat: typing.Union[Material, str],
-        units: str = "W",
-        by_nuclide: bool = False,
-        volume: Optional[float] = None,
-    ) -> Tuple[np.ndarray, typing.Union[np.ndarray, List[dict]]]:
+            self,
+            mat: Material | str,
+            units: str = "W",
+            by_nuclide: bool = False,
+            volume: float | None = None
+    ) -> tuple[np.ndarray, np.ndarray | list[dict]]:
         """Get decay heat of material over time.
 
         .. versionadded:: 0.14.0
@@ -243,7 +241,7 @@ class Results(list):
         -------
         times : numpy.ndarray
             Array of times in [s]
-        decay_heat : numpy.ndarray or List[dict]
+        decay_heat : numpy.ndarray or list[dict]
             Array of total decay heat values if by_nuclide = False (default)
             or list of dictionaries of decay heat values by nuclide if
             by_nuclide = True.
@@ -254,7 +252,7 @@ class Results(list):
         elif isinstance(mat, str):
             mat_id = mat
         else:
-            raise TypeError("mat should be of type openmc.Material or str")
+            raise TypeError('mat should be of type openmc.Material or str')
 
         times = np.empty_like(self, dtype=float)
         if by_nuclide:
@@ -266,18 +264,16 @@ class Results(list):
         for i, result in enumerate(self):
             times[i] = result.time[0]
             decay_heat[i] = result.get_material(mat_id).get_decay_heat(
-                units, by_nuclide, volume
-            )
+                units, by_nuclide, volume)
 
         return times, decay_heat
 
-    def get_mass(
-        self,
-        mat: typing.Union[Material, str],
+    def get_mass(self,
+        mat: Material | str,
         nuc: str,
         mass_units: str = "g",
-        time_units: str = "s",
-    ) -> Tuple[np.ndarray, np.ndarray]:
+        time_units: str = "s"
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Get mass of nuclides over time from a single material
 
         .. versionadded:: 0.14.0
@@ -310,7 +306,7 @@ class Results(list):
         elif isinstance(mat, str):
             mat_id = mat
         else:
-            raise TypeError("mat should be of type openmc.Material or str")
+            raise TypeError('mat should be of type openmc.Material or str')
 
         times, atoms = self.get_atoms(mat, nuc, time_units=time_units)
 
@@ -326,8 +322,11 @@ class Results(list):
         return times, mass
 
     def get_reaction_rate(
-        self, mat: typing.Union[Material, str], nuc: str, rx: str
-    ) -> Tuple[np.ndarray, np.ndarray]:
+        self,
+        mat: Material | str,
+        nuc: str,
+        rx: str
+    ) -> tuple[np.ndarray, np.ndarray]:
         """Get reaction rate in a single material/nuclide over time
 
         Parameters
@@ -355,7 +354,7 @@ class Results(list):
         elif isinstance(mat, str):
             mat_id = mat
         else:
-            raise TypeError("mat should be of type openmc.Material or str")
+            raise TypeError('mat should be of type openmc.Material or str')
 
         # Evaluate value in each region
         for i, result in enumerate(self):
@@ -364,7 +363,7 @@ class Results(list):
 
         return times, rates
 
-    def get_keff(self, time_units: str = "s") -> Tuple[np.ndarray, np.ndarray]:
+    def get_keff(self, time_units: str = 's') -> tuple[np.ndarray, np.ndarray]:
         """Evaluates the eigenvalue from a results list.
 
         .. versionadded:: 0.13.1
@@ -400,12 +399,9 @@ class Results(list):
         times = _get_time_as(times, time_units)
         return times, eigenvalues
 
-    def get_eigenvalue(self, time_units: str = "s") -> Tuple[np.ndarray, np.ndarray]:
-        warn(
-            "The get_eigenvalue(...) function has been renamed get_keff and "
-            "will be removed in a future version of OpenMC.",
-            FutureWarning,
-        )
+    def get_eigenvalue(self, time_units: str = 's') -> tuple[np.ndarray, np.ndarray]:
+        warn("The get_eigenvalue(...) function has been renamed get_keff and "
+             "will be removed in a future version of OpenMC.", FutureWarning)
         return self.get_keff(time_units)
 
     def get_depletion_time(self) -> np.ndarray:
@@ -529,8 +525,8 @@ class Results(list):
     def export_to_materials(
         self,
         burnup_index: int,
-        nuc_with_data: Optional[Iterable[str]] = None,
-        path: PathLike = "materials.xml",
+        nuc_with_data: Iterable[str] | None = None,
+        path: PathLike = 'materials.xml'
     ) -> Materials:
         """Return openmc.Materials object based on results at a given step
 
@@ -574,7 +570,7 @@ class Results(list):
         # in the materials.xml file if provided, then finally from
         # openmc.config['cross_sections'].
         if nuc_with_data:
-            cv.check_iterable_type("nuclide names", nuc_with_data, str)
+            cv.check_iterable_type('nuclide names', nuc_with_data, str)
             available_cross_sections = nuc_with_data
         else:
             # select cross_sections.xml file to use
@@ -586,10 +582,10 @@ class Results(list):
             # Find neutron libraries we have access to
             available_cross_sections = set()
             for lib in this_library.libraries:
-                if lib["type"] == "neutron":
-                    available_cross_sections.update(lib["materials"])
+                if lib['type'] == 'neutron':
+                    available_cross_sections.update(lib['materials'])
             if not available_cross_sections:
-                raise DataError("No neutron libraries found in cross_sections.xml")
+                raise DataError('No neutron libraries found in cross_sections.xml')
 
         # Overwrite material definitions, if they can be found in the depletion
         # results, and save them to the new depleted xml file.
@@ -603,7 +599,7 @@ class Results(list):
                 for nuc, value in atoms_per_barn_cm.items():
                     mat.remove_nuclide(nuc)
                     mat.add_nuclide(nuc, value)
-                mat.set_density("sum")
+                mat.set_density('sum')
 
                 # For nuclides in chain that have cross sections, replace
                 # density in original material with new density from results
@@ -613,7 +609,7 @@ class Results(list):
                     atoms = result[0, mat_id, nuc]
                     if atoms > 0.0:
                         atoms_per_barn_cm = 1e-24 * atoms / mat.volume
-                        mat.remove_nuclide(nuc)  # Replace if it's there
+                        mat.remove_nuclide(nuc) # Replace if it's there
                         mat.add_nuclide(nuc, atoms_per_barn_cm)
 
         return mat_file

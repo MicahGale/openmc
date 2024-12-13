@@ -128,10 +128,12 @@ Constructing Tallies
    openmc.CollisionFilter
    openmc.SurfaceFilter
    openmc.MeshFilter
+   openmc.MeshBornFilter
    openmc.MeshSurfaceFilter
    openmc.EnergyFilter
    openmc.EnergyoutFilter
    openmc.MuFilter
+   openmc.MuSurfaceFilter
    openmc.PolarFilter
    openmc.AzimuthalFilter
    openmc.DistribcellFilter
@@ -189,6 +191,7 @@ Post-processing
    :template: myclass.rst
 
    openmc.Particle
+   openmc.ParticleList
    openmc.ParticleTrack
    openmc.StatePoint
    openmc.Summary

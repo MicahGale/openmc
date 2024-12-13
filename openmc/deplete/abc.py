@@ -10,8 +10,6 @@ from collections.abc import Iterable, Callable
 from copy import deepcopy
 from inspect import signature
 from numbers import Real, Integral
-from contextlib import contextmanager
-import os
 from pathlib import Path
 import time
 from typing import Optional, Union, Sequence
@@ -22,6 +20,7 @@ from uncertainties import ufloat
 
 from openmc.checkvalue import check_type, check_greater_than, PathLike
 from openmc.mpi import comm
+from openmc.utility_funcs import change_directory
 from openmc import Material
 from .stepresult import StepResult
 from .chain import Chain
@@ -32,24 +31,17 @@ from .transfer_rates import TransferRates
 
 
 __all__ = [
-    "OperatorResult",
-    "TransportOperator",
-    "ReactionRateHelper",
-    "NormalizationHelper",
-    "FissionYieldHelper",
-    "Integrator",
-    "SIIntegrator",
-    "DepSystemSolver",
-    "add_params",
-]
+    "OperatorResult", "TransportOperator",
+    "ReactionRateHelper", "NormalizationHelper", "FissionYieldHelper",
+    "Integrator", "SIIntegrator", "DepSystemSolver", "add_params"]
 
 
 _SECONDS_PER_MINUTE = 60
-_SECONDS_PER_HOUR = 60 * 60
-_SECONDS_PER_DAY = 24 * 60 * 60
-_SECONDS_PER_JULIAN_YEAR = 365.25 * 24 * 60 * 60
+_SECONDS_PER_HOUR = 60*60
+_SECONDS_PER_DAY = 24*60*60
+_SECONDS_PER_JULIAN_YEAR = 365.25*24*60*60
 
-OperatorResult = namedtuple("OperatorResult", ["k", "rates"])
+OperatorResult = namedtuple('OperatorResult', ['k', 'rates'])
 OperatorResult.__doc__ = """\
 Result of applying transport operator
 
@@ -67,26 +59,6 @@ try:
 except AttributeError:
     # Can't set __doc__ on properties on Python 3.4
     pass
-
-
-@contextmanager
-def change_directory(output_dir):
-    """
-    Helper function for managing the current directory.
-
-    Parameters
-    ----------
-    output_dir : pathlib.Path
-        Directory to switch to.
-    """
-    orig_dir = os.getcwd()
-    output_dir = Path(output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    try:
-        os.chdir(output_dir)
-        yield
-    finally:
-        os.chdir(orig_dir)
 
 
 class TransportOperator(ABC):
@@ -120,9 +92,8 @@ class TransportOperator(ABC):
         The depletion chain information necessary to form matrices and tallies.
 
     """
-
     def __init__(self, chain_file, fission_q=None, prev_results=None):
-        self.output_dir = "."
+        self.output_dir = '.'
 
         # Read depletion chain
         self.chain = Chain.from_xml(chain_file, fission_q)
@@ -246,7 +217,10 @@ class ReactionRateHelper(ABC):
 
     @abstractmethod
     def get_material_rates(
-        self, mat_id: int, nuc_index: Sequence[str], react_index: Sequence[str]
+        self,
+        mat_id: int,
+        nuc_index: Sequence[str],
+        react_index: Sequence[str]
     ):
         """Return 2D array of [nuclide, reaction] reaction rates
 
@@ -392,7 +366,8 @@ class FissionYieldHelper(ABC):
             if nuc.yield_data is None:
                 continue
             if len(nuc.yield_data) == 1:
-                self._constant_yields[nuc.name] = nuc.yield_data[nuc.yield_energies[0]]
+                self._constant_yields[nuc.name] = (
+                    nuc.yield_data[nuc.yield_energies[0]])
             elif len(nuc.yield_data) > 1:
                 self._chain_nuclides[nuc.name] = nuc
         self._chain_set = set(self._chain_nuclides) | set(self._constant_yields)
@@ -494,7 +469,8 @@ def add_params(cls):
 
 @add_params
 class Integrator(ABC):
-    r"""Abstract class for solving the time-integration for depletion"""
+    r"""Abstract class for solving the time-integration for depletion
+    """
 
     _params = r"""
     Parameters
@@ -573,15 +549,15 @@ class Integrator(ABC):
     """
 
     def __init__(
-        self,
-        operator: TransportOperator,
-        timesteps: Sequence[float],
-        power: Optional[Union[float, Sequence[float]]] = None,
-        power_density: Optional[Union[float, Sequence[float]]] = None,
-        source_rates: Optional[Sequence[float]] = None,
-        timestep_units: str = "s",
-        solver: str = "cram48",
-    ):
+            self,
+            operator: TransportOperator,
+            timesteps: Sequence[float],
+            power: Optional[Union[float, Sequence[float]]] = None,
+            power_density: Optional[Union[float, Sequence[float]]] = None,
+            source_rates: Optional[Sequence[float]] = None,
+            timestep_units: str = 's',
+            solver: str = "cram48"
+        ):
         # Check number of stages previously used
         if operator.prev_res is not None:
             res = operator.prev_res[-1]
@@ -590,9 +566,8 @@ class Integrator(ABC):
                     "{} incompatible with previous restart calculation. "
                     "Previous scheme used {} intermediate solutions, while "
                     "this uses {}".format(
-                        self.__class__.__name__, res.data.shape[0], self._num_stages
-                    )
-                )
+                        self.__class__.__name__, res.data.shape[0],
+                        self._num_stages))
         self.operator = operator
         self.chain = operator.chain
 
@@ -603,7 +578,7 @@ class Integrator(ABC):
             if not isinstance(power_density, Iterable):
                 source_rates = power_density * operator.heavy_metal
             else:
-                source_rates = [p * operator.heavy_metal for p in power_density]
+                source_rates = [p*operator.heavy_metal for p in power_density]
         elif source_rates is None:
             raise ValueError("Either power, power_density, or source_rates must be set")
 
@@ -614,9 +589,7 @@ class Integrator(ABC):
         if len(source_rates) != len(timesteps):
             raise ValueError(
                 "Number of time steps ({}) != number of powers ({})".format(
-                    len(timesteps), len(source_rates)
-                )
-            )
+                    len(timesteps), len(source_rates)))
 
         # Get list of times / units
         if isinstance(timesteps[0], Iterable):
@@ -629,34 +602,32 @@ class Integrator(ABC):
         seconds = []
         for timestep, unit, rate in zip(times, units, source_rates):
             # Make sure values passed make sense
-            check_type("timestep", timestep, Real)
-            check_greater_than("timestep", timestep, 0.0, False)
-            check_type("timestep units", unit, str)
-            check_type("source rate", rate, Real)
-            check_greater_than("source rate", rate, 0.0, True)
+            check_type('timestep', timestep, Real)
+            check_greater_than('timestep', timestep, 0.0, False)
+            check_type('timestep units', unit, str)
+            check_type('source rate', rate, Real)
+            check_greater_than('source rate', rate, 0.0, True)
 
-            if unit in ("s", "sec"):
+            if unit in ('s', 'sec'):
                 seconds.append(timestep)
-            elif unit in ("min", "minute"):
-                seconds.append(timestep * _SECONDS_PER_MINUTE)
-            elif unit in ("h", "hr", "hour"):
-                seconds.append(timestep * _SECONDS_PER_HOUR)
-            elif unit in ("d", "day"):
-                seconds.append(timestep * _SECONDS_PER_DAY)
-            elif unit in ("a", "year"):
-                seconds.append(timestep * _SECONDS_PER_JULIAN_YEAR)
-            elif unit.lower() == "mwd/kg":
-                watt_days_per_kg = 1e6 * timestep
-                kilograms = 1e-3 * operator.heavy_metal
+            elif unit in ('min', 'minute'):
+                seconds.append(timestep*_SECONDS_PER_MINUTE)
+            elif unit in ('h', 'hr', 'hour'):
+                seconds.append(timestep*_SECONDS_PER_HOUR)
+            elif unit in ('d', 'day'):
+                seconds.append(timestep*_SECONDS_PER_DAY)
+            elif unit in ('a', 'year'):
+                seconds.append(timestep*_SECONDS_PER_JULIAN_YEAR)
+            elif unit.lower() == 'mwd/kg':
+                watt_days_per_kg = 1e6*timestep
+                kilograms = 1e-3*operator.heavy_metal
                 if rate == 0.0:
-                    raise ValueError(
-                        "Cannot specify a timestep in [MWd/kg] when"
-                        " the power is zero."
-                    )
+                    raise ValueError("Cannot specify a timestep in [MWd/kg] when"
+                                     " the power is zero.")
                 days = watt_days_per_kg * kilograms / rate
-                seconds.append(days * _SECONDS_PER_DAY)
+                seconds.append(days*_SECONDS_PER_DAY)
             else:
-                raise ValueError("Invalid timestep unit '{}'".format(unit))
+                raise ValueError(f"Invalid timestep unit '{unit}'")
 
         self.timesteps = np.asarray(seconds)
         self.source_rates = np.asarray(source_rates)
@@ -667,17 +638,13 @@ class Integrator(ABC):
             # Delay importing of cram module, which requires this file
             if solver == "cram48":
                 from .cram import CRAM48
-
                 self._solver = CRAM48
             elif solver == "cram16":
                 from .cram import CRAM16
-
                 self._solver = CRAM16
             else:
                 raise ValueError(
-                    "Solver {} not understood. Expected 'cram48' or "
-                    "'cram16'".format(solver)
-                )
+                    f"Solver {solver} not understood. Expected 'cram48' or 'cram16'")
         else:
             self.solver = solver
 
@@ -688,40 +655,34 @@ class Integrator(ABC):
     @solver.setter
     def solver(self, func):
         if not isinstance(func, Callable):
-            raise TypeError("Solver must be callable, not {}".format(type(func)))
+            raise TypeError(
+                f"Solver must be callable, not {type(func)}")
         try:
             sig = signature(func)
         except ValueError:
             # Guard against callables that aren't introspectable, e.g.
             # fortran functions wrapped by F2PY
-            warn(
-                "Could not determine arguments to {}. Proceeding "
-                "anyways".format(func)
-            )
+            warn(f"Could not determine arguments to {func}. Proceeding anyways")
             self._solver = func
             return
 
         # Inspect arguments
         if len(sig.parameters) != 3:
-            raise ValueError(
-                "Function {} does not support three arguments: "
-                "{!s}".format(func, sig)
-            )
+            raise ValueError("Function {} does not support three arguments: "
+                             "{!s}".format(func, sig))
 
         for ix, param in enumerate(sig.parameters.values()):
             if param.kind in {param.KEYWORD_ONLY, param.VAR_KEYWORD}:
                 raise ValueError(
-                    "Keyword arguments like {} at position {} are not "
-                    "allowed".format(ix, param)
-                )
+                    f"Keyword arguments like {ix} at position {param} are not allowed")
 
         self._solver = func
 
     def _timed_deplete(self, n, rates, dt, matrix_func=None):
         start = time.time()
         results = deplete(
-            self._solver, self.chain, n, rates, dt, matrix_func, self.transfer_rates
-        )
+            self._solver, self.chain, n, rates, dt, matrix_func,
+            self.transfer_rates)
         return time.time() - start, results
 
     @abstractmethod
@@ -731,7 +692,7 @@ class Integrator(ABC):
         rates: ReactionRates,
         dt: float,
         source_rate: float,
-        i: int,
+        i: int
     ):
         """Perform the integration across one time step
 
@@ -778,7 +739,8 @@ class Integrator(ABC):
         return len(self.timesteps)
 
     def _get_bos_data_from_operator(self, step_index, source_rate, bos_conc):
-        """Get beginning of step concentrations, reaction rates from Operator"""
+        """Get beginning of step concentrations, reaction rates from Operator
+        """
         x = deepcopy(bos_conc)
         res = self.operator(x, source_rate)
         self.operator.write_bos_data(step_index + self._i_res)
@@ -792,21 +754,23 @@ class Integrator(ABC):
         rates = res.rates[0]
         k = ufloat(res.k[0, 0], res.k[0, 1])
 
-        # Scale reaction rates by ratio of source rates
-        rates *= source_rate / res.source_rate
+        if res.source_rate != 0.0:
+            # Scale reaction rates by ratio of source rates
+            rates *= source_rate / res.source_rate
         return bos_conc, OperatorResult(k, rates)
 
     def _get_start_data(self):
         if self.operator.prev_res is None:
             return 0.0, 0
-        return (self.operator.prev_res[-1].time[-1], len(self.operator.prev_res) - 1)
+        return (self.operator.prev_res[-1].time[-1],
+                len(self.operator.prev_res) - 1)
 
     def integrate(
-        self,
-        final_step: bool = True,
-        output: bool = True,
-        path: PathLike = "depletion_results.h5",
-    ):
+            self,
+            final_step: bool = True,
+            output: bool = True,
+            path: PathLike = 'depletion_results.h5'
+        ):
         """Perform the entire depletion process across all steps
 
         Parameters
@@ -823,7 +787,7 @@ class Integrator(ABC):
         path : PathLike
             Path to file to write. Defaults to 'depletion_results.h5'.
 
-            .. versionadded:: 0.14.1
+            .. versionadded:: 0.15.0
         """
         with change_directory(self.operator.output_dir):
             n = self.operator.initial_condition()
@@ -849,16 +813,8 @@ class Integrator(ABC):
                 # Remove actual EOS concentration for next step
                 n = n_list.pop()
 
-                StepResult.save(
-                    self.operator,
-                    n_list,
-                    res_list,
-                    [t, t + dt],
-                    source_rate,
-                    self._i_res + i,
-                    proc_time,
-                    path,
-                )
+                StepResult.save(self.operator, n_list, res_list, [t, t + dt],
+                                source_rate, self._i_res + i, proc_time, path)
 
                 t += dt
 
@@ -869,27 +825,20 @@ class Integrator(ABC):
             if output and final_step and comm.rank == 0:
                 print(f"[openmc.deplete] t={t} (final operator evaluation)")
             res_list = [self.operator(n, source_rate if final_step else 0.0)]
-            StepResult.save(
-                self.operator,
-                [n],
-                res_list,
-                [t, t],
-                source_rate,
-                self._i_res + len(self),
-                proc_time,
-            )
+            StepResult.save(self.operator, [n], res_list, [t, t],
+                         source_rate, self._i_res + len(self), proc_time, path)
             self.operator.write_bos_data(len(self) + self._i_res)
 
         self.operator.finalize()
 
     def add_transfer_rate(
-        self,
-        material: Union[str, int, Material],
-        components: Sequence[str],
-        transfer_rate: float,
-        transfer_rate_units: str = "1/s",
-        destination_material: Optional[Union[str, int, Material]] = None,
-    ):
+            self,
+            material: Union[str, int, Material],
+            components: Sequence[str],
+            transfer_rate: float,
+            transfer_rate_units: str = '1/s',
+            destination_material: Optional[Union[str, int, Material]] = None
+        ):
         """Add transfer rates to depletable material.
 
         Parameters
@@ -913,14 +862,8 @@ class Integrator(ABC):
         if self.transfer_rates is None:
             self.transfer_rates = TransferRates(self.operator, self.operator.model)
 
-        self.transfer_rates.set_transfer_rate(
-            material,
-            components,
-            transfer_rate,
-            transfer_rate_units,
-            destination_material,
-        )
-
+        self.transfer_rates.set_transfer_rate(material, components, transfer_rate,
+                                      transfer_rate_units, destination_material)
 
 @add_params
 class SIIntegrator(Integrator):
@@ -1009,27 +952,21 @@ class SIIntegrator(Integrator):
     """
 
     def __init__(
-        self,
-        operator: TransportOperator,
-        timesteps: Sequence[float],
-        power: Optional[Union[float, Sequence[float]]] = None,
-        power_density: Optional[Union[float, Sequence[float]]] = None,
-        source_rates: Optional[Sequence[float]] = None,
-        timestep_units: str = "s",
-        n_steps: int = 10,
-        solver: str = "cram48",
-    ):
+            self,
+            operator: TransportOperator,
+            timesteps: Sequence[float],
+            power: Optional[Union[float, Sequence[float]]] = None,
+            power_density: Optional[Union[float, Sequence[float]]] = None,
+            source_rates: Optional[Sequence[float]] = None,
+            timestep_units: str = 's',
+            n_steps: int = 10,
+            solver: str = "cram48"
+        ):
         check_type("n_steps", n_steps, Integral)
         check_greater_than("n_steps", n_steps, 0)
         super().__init__(
-            operator,
-            timesteps,
-            power,
-            power_density,
-            source_rates,
-            timestep_units=timestep_units,
-            solver=solver,
-        )
+            operator, timesteps, power, power_density, source_rates,
+            timestep_units=timestep_units, solver=solver)
         self.n_steps = n_steps
 
     def _get_bos_data_from_operator(self, step_index, step_power, n_bos):
@@ -1037,12 +974,17 @@ class SIIntegrator(Integrator):
         if step_index == 0 and hasattr(self.operator, "settings"):
             reset_particles = True
             self.operator.settings.particles *= self.n_steps
-        inherited = super()._get_bos_data_from_operator(step_index, step_power, n_bos)
+        inherited = super()._get_bos_data_from_operator(
+            step_index, step_power, n_bos)
         if reset_particles:
             self.operator.settings.particles //= self.n_steps
         return inherited
 
-    def integrate(self, output: bool = True, path: PathLike = "depletion_results.h5"):
+    def integrate(
+            self,
+            output: bool = True,
+            path: PathLike = "depletion_results.h5"
+        ):
         """Perform the entire depletion process across all steps
 
         Parameters
@@ -1052,7 +994,7 @@ class SIIntegrator(Integrator):
         path : PathLike
             Path to file to write. Defaults to 'depletion_results.h5'.
 
-            .. versionadded:: 0.14.1
+            .. versionadded:: 0.15.0
         """
         with change_directory(self.operator.output_dir):
             n = self.operator.initial_condition()
@@ -1081,30 +1023,14 @@ class SIIntegrator(Integrator):
                 # Remove actual EOS concentration for next step
                 n = n_list.pop()
 
-                StepResult.save(
-                    self.operator,
-                    n_list,
-                    res_list,
-                    [t, t + dt],
-                    p,
-                    self._i_res + i,
-                    proc_time,
-                    path,
-                )
+                StepResult.save(self.operator, n_list, res_list, [t, t + dt],
+                             p, self._i_res + i, proc_time, path)
 
                 t += dt
 
             # No final simulation for SIE, use last iteration results
-            StepResult.save(
-                self.operator,
-                [n],
-                [res_list[-1]],
-                [t, t],
-                p,
-                self._i_res + len(self),
-                proc_time,
-                path,
-            )
+            StepResult.save(self.operator, [n], [res_list[-1]], [t, t],
+                         p, self._i_res + len(self), proc_time, path)
             self.operator.write_bos_data(self._i_res + len(self))
 
         self.operator.finalize()

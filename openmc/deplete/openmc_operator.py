@@ -7,7 +7,6 @@ transport-independent transport operators.
 
 from abc import abstractmethod
 from warnings import warn
-from typing import List, Tuple, Dict
 
 import numpy as np
 
@@ -99,22 +98,21 @@ class OpenMCOperator(TransportOperator):
     """
 
     def __init__(
-        self,
-        materials=None,
-        cross_sections=None,
-        chain_file=None,
-        prev_results=None,
-        diff_burnable_mats=False,
-        diff_volume_method="divide equally",
-        fission_q=None,
-        helper_kwargs=None,
-        reduce_chain=False,
-        reduce_chain_level=None,
-    ):
+            self,
+            materials=None,
+            cross_sections=None,
+            chain_file=None,
+            prev_results=None,
+            diff_burnable_mats=False,
+            diff_volume_method='divide equally',
+            fission_q=None,
+            helper_kwargs=None,
+            reduce_chain=False,
+            reduce_chain_level=None):
 
         # If chain file was not specified, try to get it from global config
         if chain_file is None:
-            chain_file = openmc.config.get("chain_file")
+            chain_file = openmc.config.get('chain_file')
             if chain_file is None:
                 raise DataError(
                     "No depletion chain specified and could not find depletion "
@@ -126,9 +124,8 @@ class OpenMCOperator(TransportOperator):
         self.materials = materials
         self.cross_sections = cross_sections
 
-        check_value(
-            "diff volume method", diff_volume_method, {"divide equally", "match cell"}
-        )
+        check_value('diff volume method', diff_volume_method,
+                    {'divide equally', 'match cell'})
         self.diff_volume_method = diff_volume_method
 
         # Reduce the chain to only those nuclides present
@@ -144,45 +141,40 @@ class OpenMCOperator(TransportOperator):
 
         if diff_burnable_mats:
             self._differentiate_burnable_mats()
+            self.materials = self.model.materials
 
         # Determine which nuclides have cross section data
         # This nuclides variables contains every nuclides
         # for which there is an entry in the micro_xs parameter
-        openmc.reset_auto_ids()
-
-        self.nuclides_with_data = self._get_nuclides_with_data(self.cross_sections)
+        self.nuclides_with_data = self._get_nuclides_with_data(
+            self.cross_sections)
 
         # Select nuclides with data that are also in the chain
-        self._burnable_nucs = [
-            nuc.name
-            for nuc in self.chain.nuclides
-            if nuc.name in self.nuclides_with_data
-        ]
+        self._burnable_nucs = [nuc.name for nuc in self.chain.nuclides
+                               if nuc.name in self.nuclides_with_data]
 
         # Select nuclides without data that are also in the chain
-        self._decay_nucs = [
-            nuc.name
-            for nuc in self.chain.nuclides
-            if nuc.name not in self.nuclides_with_data
-        ]
+        self._decay_nucs = [nuc.name for nuc in self.chain.nuclides
+                            if nuc.name not in self.nuclides_with_data]
 
         self.burnable_mats, volumes, all_nuclides = self._get_burnable_mats()
         self.local_mats = _distribute(self.burnable_mats)
 
         self._mat_index_map = {
-            lm: self.burnable_mats.index(lm) for lm in self.local_mats
-        }
+            lm: self.burnable_mats.index(lm) for lm in self.local_mats}
 
         if self.prev_res is not None:
             self._load_previous_results()
 
         # Extract number densities from the geometry / previous depletion run
-        self._extract_number(self.local_mats, volumes, all_nuclides, self.prev_res)
+        self._extract_number(self.local_mats,
+                             volumes,
+                             all_nuclides,
+                             self.prev_res)
 
         # Create reaction rates array
         self.reaction_rates = ReactionRates(
-            self.local_mats, self._burnable_nucs, self.chain.reactions
-        )
+            self.local_mats, self._burnable_nucs, self.chain.reactions)
 
         self._get_helper_classes(helper_kwargs)
 
@@ -190,7 +182,7 @@ class OpenMCOperator(TransportOperator):
         """Assign distribmats for each burnable material"""
         pass
 
-    def _get_burnable_mats(self) -> Tuple[List[str], Dict[str, float], List[str]]:
+    def _get_burnable_mats(self) -> tuple[list[str], dict[str, float], list[str]]:
         """Determine depletable materials, volumes, and nuclides
 
         Returns
@@ -216,32 +208,27 @@ class OpenMCOperator(TransportOperator):
                 if nuclide in self.nuclides_with_data or self._decay_nucs:
                     model_nuclides.add(nuclide)
                 else:
-                    msg = (
-                        f"Nuclilde {nuclide} in material {mat.id} is not "
-                        "present in the depletion chain and has no cross "
-                        "section data."
-                    )
+                    msg = (f"Nuclide {nuclide} in material {mat.id} is not "
+                           "present in the depletion chain and has no cross "
+                           "section data.")
                     warn(msg)
             if mat.depletable:
                 burnable_mats.add(str(mat.id))
                 if mat.volume is None:
                     if mat.name is None:
-                        msg = (
-                            "Volume not specified for depletable material "
-                            f"with ID={mat.id}."
-                        )
+                        msg = ("Volume not specified for depletable material "
+                               f"with ID={mat.id}.")
                     else:
-                        msg = (
-                            "Volume not specified for depletable material "
-                            f"with ID={mat.id} Name={mat.name}."
-                        )
+                        msg = ("Volume not specified for depletable material "
+                               f"with ID={mat.id} Name={mat.name}.")
                     raise RuntimeError(msg)
                 volume[str(mat.id)] = mat.volume
                 self.heavy_metal += mat.fissionable_mass
 
         # Make sure there are burnable materials
         if not burnable_mats:
-            raise RuntimeError("No depletable materials were found in the model.")
+            raise RuntimeError(
+                "No depletable materials were found in the model.")
 
         # Sort the sets
         burnable_mats = sorted(burnable_mats, key=int)
@@ -383,13 +370,11 @@ class OpenMCOperator(TransportOperator):
 
         self._rate_helper.generate_tallies(materials, self.chain.reactions)
         self._normalization_helper.prepare(
-            self.chain.nuclides, self.reaction_rates.index_nuc
-        )
+            self.chain.nuclides, self.reaction_rates.index_nuc)
         # Tell fission yield helper what materials this process is
         # responsible for
         self._yield_helper.generate_tallies(
-            materials, tuple(sorted(self._mat_index_map.values()))
-        )
+            materials, tuple(sorted(self._mat_index_map.values())))
 
         # Return number density vector
         return list(self.number.get_mat_slice(np.s_[:]))
@@ -408,9 +393,6 @@ class OpenMCOperator(TransportOperator):
         # Update the number densities regardless of the source rate
         self.number.set_density(vec)
         self._update_materials()
-
-        # Prevent OpenMC from complaining about re-creating tallies
-        openmc.reset_auto_ids()
 
         # Update tally nuclides data in preparation for transport solve
         nuclides = self._get_reaction_nuclides()
@@ -469,7 +451,8 @@ class OpenMCOperator(TransportOperator):
 
         if comm.rank == 0:
             # Sort nuclides in the same order as self.number
-            nuc_list = [nuc for nuc in self.number.nuclides if nuc in nuc_set]
+            nuc_list = [nuc for nuc in self.number.nuclides
+                        if nuc in nuc_set]
         else:
             nuc_list = None
 
@@ -537,8 +520,7 @@ class OpenMCOperator(TransportOperator):
             # Get microscopic reaction rates in [(reactions/src)*b-cm/atom]. 2D
             # array with shape (nuclides, reactions).
             tally_rates = self._rate_helper.get_material_rates(
-                mat_index, nuc_ind, rx_ind
-            )
+                mat_index, nuc_ind, rx_ind)
 
             # Compute fission yields for this material
             fission_yields.append(self._yield_helper.weighted_yields(i))

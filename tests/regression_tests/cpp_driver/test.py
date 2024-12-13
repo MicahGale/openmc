@@ -17,28 +17,22 @@ def cpp_driver(request):
     """Compile the external source"""
 
     # Get build directory and write CMakeLists.txt file
-    openmc_dir = Path(str(request.config.rootdir)) / "build"
-    with open("CMakeLists.txt", "w") as f:
-        f.write(
-            textwrap.dedent(
-                """
-            cmake_minimum_required(VERSION 3.3 FATAL_ERROR)
+    openmc_dir = Path(str(request.config.rootdir)) / 'build'
+    with open('CMakeLists.txt', 'w') as f:
+        f.write(textwrap.dedent("""
+            cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
             project(openmc_cpp_driver CXX)
             add_executable(cpp_driver driver.cpp)
             find_package(OpenMC REQUIRED HINTS {})
             target_link_libraries(cpp_driver OpenMC::libopenmc)
-            """.format(
-                    openmc_dir
-                )
-            )
-        )
+            """.format(openmc_dir)))
 
     # Create temporary build directory and change to there
-    local_builddir = Path("build")
+    local_builddir = Path('build')
     local_builddir.mkdir(exist_ok=True)
     os.chdir(str(local_builddir))
 
-    if config["mpi"]:
+    if config['mpi']:
         mpi_arg = "On"
     else:
         mpi_arg = "Off"
@@ -46,18 +40,16 @@ def cpp_driver(request):
     try:
         print("Building driver")
         # Run cmake/make to build the shared libary
-        subprocess.run(
-            ["cmake", os.path.pardir, f"-DOPENMC_USE_MPI={mpi_arg}"], check=True
-        )
-        subprocess.run(["make"], check=True)
+        subprocess.run(['cmake', os.path.pardir, f'-DOPENMC_USE_MPI={mpi_arg}'], check=True)
+        subprocess.run(['make'], check=True)
         os.chdir(os.path.pardir)
 
         yield "./build/cpp_driver"
 
     finally:
         # Remove local build directory when test is complete
-        shutil.rmtree(request.node.path.parent / "build")
-        os.remove(request.node.path.parent / "CMakeLists.txt")
+        shutil.rmtree(request.node.path.parent / 'build')
+        os.remove(request.node.path.parent / 'CMakeLists.txt')
 
 
 @pytest.fixture
@@ -66,17 +58,17 @@ def model():
 
     # materials
     u235 = openmc.Material(name="fuel")
-    u235.add_nuclide("U235", 1.0, "ao")
-    u235.set_density("g/cc", 11)
+    u235.add_nuclide('U235', 1.0, 'ao')
+    u235.set_density('g/cc', 11)
 
-    zirc = openmc.Material(name="cladding")
-    zirc.add_nuclide("Zr90", 1.0)
-    zirc.set_density("g/cc", 6.44)
+    zirc = openmc.Material(name='cladding')
+    zirc.add_nuclide('Zr90', 1.0)
+    zirc.set_density('g/cc', 6.44)
 
     water = openmc.Material(name="water")
-    water.add_nuclide("H1", 2.0, "ao")
-    water.add_nuclide("O16", 1.0, "ao")
-    water.set_density("g/cc", 1.0)
+    water.add_nuclide('H1', 2.0, 'ao')
+    water.add_nuclide('O16', 1.0, 'ao')
+    water.set_density('g/cc', 1.0)
 
     mats = openmc.Materials([u235, zirc, water])
     model.materials = mats
@@ -100,7 +92,8 @@ def model():
     lattice.pitch = (4.0, 4.0)
     lattice.lower_left = (-4.0, -4.0)
     lattice.universes = [[extra_univ, extra_univ], [extra_univ, extra_univ]]
-    lattice_prism = openmc.model.RectangularPrism(8.0, 8.0, boundary_type="reflective")
+    lattice_prism = openmc.model.RectangularPrism(
+        8.0, 8.0, boundary_type='reflective')
     lattice_cell = openmc.Cell(fill=lattice, region=-lattice_prism)
 
     model.geometry = openmc.Geometry([lattice_cell])
@@ -119,21 +112,20 @@ class ExternalDriverTestHarness(PyAPITestHarness):
         self.executable = executable
 
     def _run_openmc(self):
-        if config["mpi"]:
-            mpi_args = [config["mpiexec"], "-n", config["mpi_np"]]
-            openmc.run(
-                openmc_exec=self.executable,
-                mpi_args=mpi_args,
-                event_based=config["event"],
-            )
+        if config['mpi']:
+            mpi_args = [config['mpiexec'], '-n', config['mpi_np']]
+            openmc.run(openmc_exec=self.executable,
+                       mpi_args=mpi_args,
+                       event_based=config['event'])
         else:
-            openmc.run(openmc_exec=self.executable, event_based=config["event"])
+            openmc.run(openmc_exec=self.executable,
+                       event_based=config['event'])
 
     def _compare_results(self):
         super()._compare_results()
 
         # load the summary file
-        summary = openmc.Summary("summary.h5")
+        summary = openmc.Summary('summary.h5')
 
         # get the summary cells
         cells = summary.geometry.get_all_cells()
@@ -148,5 +140,5 @@ class ExternalDriverTestHarness(PyAPITestHarness):
 
 
 def test_cpp_driver(cpp_driver, model):
-    harness = ExternalDriverTestHarness(cpp_driver, "statepoint.10.h5", model)
+    harness = ExternalDriverTestHarness(cpp_driver, 'statepoint.10.h5', model)
     harness.main()

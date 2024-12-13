@@ -11,7 +11,7 @@
 #include "openmc/settings.h"
 #include "openmc/string_utils.h"
 
-#ifdef DAGMC
+#ifdef OPENMC_UWUW
 #include "uwuw.hpp"
 #endif
 #include <fmt/core.h>
@@ -27,6 +27,12 @@ namespace openmc {
 const bool DAGMC_ENABLED = true;
 #else
 const bool DAGMC_ENABLED = false;
+#endif
+
+#ifdef OPENMC_UWUW
+const bool UWUW_ENABLED = true;
+#else
+const bool UWUW_ENABLED = false;
 #endif
 
 } // namespace openmc
@@ -85,7 +91,6 @@ DAGUniverse::DAGUniverse(std::shared_ptr<moab::DagMC> dagmc_ptr,
 {
   set_id();
   init_metadata();
-  read_uwuw_materials();
   init_geometry();
 }
 
@@ -107,11 +112,14 @@ void DAGUniverse::initialize()
 {
   geom_type() = GeometryType::DAG;
 
+#ifdef OPENMC_UWUW
+  // read uwuw materials from the .h5m file if present
+  read_uwuw_materials();
+#endif
+
   init_dagmc();
 
   init_metadata();
-
-  read_uwuw_materials();
 
   init_geometry();
 }
@@ -209,20 +217,7 @@ void DAGUniverse::init_geometry()
       c->material_.push_back(MATERIAL_VOID);
     } else {
       if (uses_uwuw()) {
-        // lookup material in uwuw if present
-        std::string uwuw_mat =
-          dmd_ptr->volume_material_property_data_eh[vol_handle];
-        if (uwuw_->material_library.count(uwuw_mat) != 0) {
-          // Note: material numbers are set by UWUW
-          int mat_number = uwuw_->material_library.get_material(uwuw_mat)
-                             .metadata["mat_number"]
-                             .asInt();
-          c->material_.push_back(mat_number);
-        } else {
-          fatal_error(fmt::format("Material with value '{}' not found in the "
-                                  "UWUW material library",
-            mat_str));
-        }
+        uwuw_assign_material(vol_handle, c);
       } else {
         legacy_assign_material(mat_str, c);
       }
@@ -281,8 +276,10 @@ void DAGUniverse::init_geometry()
                                   : dagmc_instance_->id_by_index(2, i + 1);
 
     // set surface source attribute if needed
-    if (contains(settings::source_write_surf_id, s->id_))
+    if (contains(settings::source_write_surf_id, s->id_) ||
+        settings::source_write_surf_id.empty()) {
       s->surf_source_ = true;
+    }
 
     // set BCs
     std::string bc_value =
@@ -439,11 +436,16 @@ void DAGUniverse::to_hdf5(hid_t universes_group) const
 
 bool DAGUniverse::uses_uwuw() const
 {
+#ifdef OPENMC_UWUW
   return uwuw_ && !uwuw_->material_library.empty();
+#else
+  return false;
+#endif // OPENMC_UWUW
 }
 
 std::string DAGUniverse::get_uwuw_materials_xml() const
 {
+#ifdef OPENMC_UWUW
   if (!uses_uwuw()) {
     throw std::runtime_error("This DAGMC Universe does not use UWUW materials");
   }
@@ -461,10 +463,14 @@ std::string DAGUniverse::get_uwuw_materials_xml() const
   ss << "</materials>";
 
   return ss.str();
+#else
+  fatal_error("DAGMC was not configured with UWUW.");
+#endif // OPENMC_UWUW
 }
 
 void DAGUniverse::write_uwuw_materials_xml(const std::string& outfile) const
 {
+#ifdef OPENMC_UWUW
   if (!uses_uwuw()) {
     throw std::runtime_error(
       "This DAGMC universe does not use UWUW materials.");
@@ -475,6 +481,9 @@ void DAGUniverse::write_uwuw_materials_xml(const std::string& outfile) const
   std::ofstream mats_xml(outfile);
   mats_xml << xml_str;
   mats_xml.close();
+#else
+  fatal_error("DAGMC was not configured with UWUW.");
+#endif // OPENMC_UWUW
 }
 
 void DAGUniverse::legacy_assign_material(
@@ -536,6 +545,7 @@ void DAGUniverse::legacy_assign_material(
 
 void DAGUniverse::read_uwuw_materials()
 {
+#ifdef OPENMC_UWUW
   // If no filename was provided, don't read UWUW materials
   if (filename_ == "")
     return;
@@ -573,8 +583,32 @@ void DAGUniverse::read_uwuw_materials()
   for (pugi::xml_node material_node : root.children("material")) {
     model::materials.push_back(std::make_unique<Material>(material_node));
   }
+#else
+  fatal_error("DAGMC was not configured with UWUW.");
+#endif // OPENMC_UWUW
 }
 
+void DAGUniverse::uwuw_assign_material(
+  moab::EntityHandle vol_handle, std::unique_ptr<DAGCell>& c) const
+{
+#ifdef OPENMC_UWUW
+  // lookup material in uwuw if present
+  std::string uwuw_mat = dmd_ptr->volume_material_property_data_eh[vol_handle];
+  if (uwuw_->material_library.count(uwuw_mat) != 0) {
+    // Note: material numbers are set by UWUW
+    int mat_number = uwuw_->material_library.get_material(uwuw_mat)
+                       .metadata["mat_number"]
+                       .asInt();
+    c->material_.push_back(mat_number);
+  } else {
+    fatal_error(fmt::format("Material with value '{}' not found in the "
+                            "UWUW material library",
+      uwuw_mat));
+  }
+#else
+  fatal_error("DAGMC was not configured with UWUW.");
+#endif // OPENMC_UWUW
+}
 //==============================================================================
 // DAGMC Cell implementation
 //==============================================================================
