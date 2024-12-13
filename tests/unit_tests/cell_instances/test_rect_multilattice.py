@@ -7,14 +7,9 @@ import openmc.lib
 from tests import cdtemp
 
 
-<<<<<<< HEAD:tests/unit_tests/test_cell_instance.py
-@pytest.fixture(scope="module", autouse=True)
-def double_lattice_model():
-=======
 @pytest.fixture(scope='module', autouse=True)
 def double_rect_lattice_model():
     openmc.reset_auto_ids()
->>>>>>> develop:tests/unit_tests/cell_instances/test_rect_multilattice.py
     model = openmc.Model()
 
     # Create a single material
@@ -88,13 +83,8 @@ rect_expected_results = [
 ]
 
 
-<<<<<<< HEAD:tests/unit_tests/test_cell_instance.py
-@pytest.mark.parametrize("r,expected_cell_instance", expected_results)
-def test_cell_instance_multilattice(r, expected_cell_instance):
-=======
 @pytest.mark.parametrize("r,expected_cell_instance", rect_expected_results, ids=lambda p : f'{p}')
 def test_cell_instance_rect_multilattice(r, expected_cell_instance):
->>>>>>> develop:tests/unit_tests/cell_instances/test_rect_multilattice.py
     _, cell_instance = openmc.lib.find_cell(r)
     assert cell_instance == expected_cell_instance
 

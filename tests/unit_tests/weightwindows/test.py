@@ -299,8 +299,6 @@ def test_ww_attrs_capi(run_in_tmpdir, model):
     assert wws.particle == openmc.ParticleType.PHOTON
 
     openmc.lib.finalize()
-<<<<<<< HEAD
-=======
 
 
 @pytest.mark.parametrize('library', ('libmesh', 'moab'))
@@ -337,4 +335,3 @@ def test_unstructured_mesh_applied_wws(request, run_in_tmpdir, library):
     model.settings.particles = 100
     model.settings.batches = 2
     model.run()
->>>>>>> develop

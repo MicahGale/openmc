@@ -55,13 +55,8 @@ def model():
         run_mode="fixed source",
         particles=100,
         batches=10,
-<<<<<<< HEAD
-        max_splits=10,
-        survival_biasing=False,
-=======
         max_history_splits=10,
         survival_biasing=False
->>>>>>> develop
     )
 
     # 10 keV neutron point source at the origin
